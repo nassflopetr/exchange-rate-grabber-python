@@ -1,0 +1,2 @@
+class ExchangeRateGrabberException(Exception):
+    pass

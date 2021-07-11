@@ -1,0 +1,4 @@
+requests>=2.25.1
+beautifulsoup4>=4.9.3
+redis>=3.5.3
+python-dotenv>=0.18.0
