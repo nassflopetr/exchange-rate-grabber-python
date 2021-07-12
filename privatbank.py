@@ -1,7 +1,6 @@
 import re
 import requests
-import json
-from typing import Union, Set
+from typing import Union, Iterator
 from grabber import Grabber
 from model import ExchangeRate
 from exception import ExchangeRateGrabberException
@@ -35,31 +34,25 @@ class PrivatBankGrabber(Grabber):
         destination_currency_code: str,
         response: list = None
     ) -> Union[ExchangeRate, None]:
-        exchange_rates = self.get_exchange_rates(response)
-
-        for exchange_rate in exchange_rates:
+        for exchange_rate in self.get_exchange_rates(response):
             if (exchange_rate.get_base_currency_code() == base_currency_code
                     and exchange_rate.get_destination_currency_code() == destination_currency_code):
                 return exchange_rate
 
         return None
 
-    def get_exchange_rates(self, response: list = None) -> Set[ExchangeRate]:
+    def get_exchange_rates(self, response: list = None) -> Iterator[ExchangeRate]:
         if response is None:
             response = self.get_response()
 
-        exchange_rates = set()
-
         for row in response:
-            exchange_rates.add(ExchangeRate(
+            yield ExchangeRate(
                 PrivatBankGrabber(),
                 self._get_base_currency_code(row),
                 self._get_destination_currency_code(row),
                 self._get_buy_rate(row),
                 self._get_sale_rate(row),
-            ))
-
-        return exchange_rates
+            )
 
     def _get_base_currency_code(self, row: dict) -> str:
         try:

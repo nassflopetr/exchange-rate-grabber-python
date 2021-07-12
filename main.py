@@ -5,6 +5,8 @@ import requests
 from redis import Redis
 from typing import Union
 from dotenv import load_dotenv
+from threading import Thread, Lock
+from grabber import Grabber
 from nbu import NBUGrabber
 from oschadbank import OschadBankGrabber
 from privatbank import PrivatBankGrabber
@@ -122,14 +124,14 @@ try:
                    f'<b>1 {destination_currency_code} -&gt; {sale_exchange_rate_formatted}' \
                    f'{sale_rate_changed_at_formatted} {base_currency_code}</b>'
 
-    for grabber_class_name in _GRABBERS:
-        try:
-            grabber_obj = _GRABBERS[grabber_class_name]['class']()
+    def operate_grabber(grabber: Grabber, lock: Lock) -> None:
+        global _CURRENCY_CODES, logger, redis
 
-            response = grabber_obj.get_response()
+        try:
+            response = grabber.get_response()
 
             for currency_code in _CURRENCY_CODES:
-                exchange_rate = grabber_obj.get_exchange_rate(
+                exchange_rate = grabber.get_exchange_rate(
                     currency_code['base_currency_code'],
                     currency_code['destination_currency_code'],
                     response
@@ -148,6 +150,8 @@ try:
                     f"{currency_code['base_currency_code']}:" \
                     f"{currency_code['destination_currency_code']}"
 
+                lock.acquire()
+
                 if redis.exists(exchange_rate_redis_key):
                     pre_exchange_rate = pickle.loads(redis.get(exchange_rate_redis_key))
 
@@ -164,14 +168,27 @@ try:
                     exchange_rate.notify_exchange_rate_created()
 
                     redis.set(exchange_rate_redis_key, pickle.dumps(exchange_rate))
+
+                lock.release()
         except ExchangeRateGrabberException as e:
             logger.error(e, exc_info=True)
 
-            continue
         except Exception as e:
             logger.critical(e, exc_info=True)
 
-            continue
+    threads = []
+
+    lock = Lock()
+
+    for grabber_class_name in _GRABBERS:
+        thread = Thread(target=operate_grabber, args=(_GRABBERS[grabber_class_name]['class'](), lock,))
+
+        threads.append(thread)
+
+        thread.start()
+
+    for thread in threads:
+        thread.join()
 
 except Exception as e:
     logger.critical(e, exc_info=True)
