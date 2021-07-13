@@ -1,4 +1,4 @@
-import os
+import os, time
 import pickle
 import logging
 import requests
@@ -17,6 +17,10 @@ from model import ExchangeRate, ExchangeRateObserver
 
 
 load_dotenv('./.env')
+
+os.environ['TZ'] = os.getenv('GRABBER_TIMEZONE')
+
+time.tzset()
 
 logger = logging.getLogger(__name__)
 file_handler = logging.FileHandler(os.getenv('GRABBER_LOG_FILE_PATH'))
