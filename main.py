@@ -139,14 +139,14 @@ try:
 
                 if exchange_rate is None:
                     logger.warning(
-                        f'{grabber_class_name} exchange rate for {currency_code["base_currency_code"]} -> '
+                        f'{grabber.__class__.__name__} exchange rate for {currency_code["base_currency_code"]} -> '
                         f'{currency_code["destination_currency_code"]} was not found.'
                     )
 
                     continue
 
                 exchange_rate_redis_key = \
-                    f"{grabber_class_name}:" \
+                    f"{grabber.__class__.__name__}:" \
                     f"{currency_code['base_currency_code']}:" \
                     f"{currency_code['destination_currency_code']}"
 
