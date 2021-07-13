@@ -1,6 +1,7 @@
 import re
 import requests
-import datetime
+from datetime import datetime
+from dateutil import tz
 from typing import Union, Iterator
 from model import ExchangeRate
 from bs4 import BeautifulSoup, element
@@ -15,7 +16,7 @@ class NBUGrabber(Grabber):
                 'https://bank.gov.ua/ua/markets/exchangerates',
                 params={
                     'period': 'daily',
-                    'date': datetime.date.today().strftime('%d.%m.%Y')
+                    'date': datetime.now(tz=tz.gettz('Europe/Kiev')).strftime('%d.%m.%Y')
                 },
                 timeout=30
             )
